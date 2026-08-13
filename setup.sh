@@ -17,7 +17,7 @@ fi
 # 2. Обновление пакетов и установка зависимостей
 echo "📦 Проверяем пакеты и зависимости..."
 apt-get update -y
-apt-get install -y curl wget git nginx certbot python3-certbot-nginx docker-compose-v2 docker-compose-plugin 2>/dev/null || true
+apt-get install -y curl wget git nginx certbot python3-certbot-nginx
 
 # 3. Проверка и установка Docker
 if ! command -v docker &> /dev/null; then
@@ -29,11 +29,19 @@ else
     echo "✅ Docker уже установлен."
 fi
 
-# 4. Очистка старых зависших контейнеров (для предотвращения KeyError ContainerConfig)
+# 4. Установка современного Docker Compose v2 (замена старого Python 1.29.2)
+echo "🛠 Обновляем Docker Compose до версии v2..."
+mkdir -p /usr/libexec/docker/cli-plugins /usr/local/bin
+curl -sSL "https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+cp -f /usr/local/bin/docker-compose /usr/libexec/docker/cli-plugins/docker-compose 2>/dev/null || true
+
+# 5. Полная очистка старых контейнеров и несовместимых кешей
 echo "🧹 Очищаем старые версии контейнеров..."
 docker rm -f gemini-browser 2>/dev/null || true
+docker ps -a --filter "name=gemini" -q | xargs -r docker rm -f 2>/dev/null || true
 
-# 5. Генерация надежного пароля, если пароль еще не меняли
+# 6. Генерация надежного пароля, если пароль еще не меняли
 if grep -q "ChangeMeSecurePassword123!" docker-compose.yml; then
     GEN_PASSWORD=$(openssl rand -base64 12 | tr -dc 'a-zA-Z0-9')
     sed -i "s/ChangeMeSecurePassword123!/$GEN_PASSWORD/g" docker-compose.yml
@@ -41,22 +49,15 @@ else
     GEN_PASSWORD=$(grep "PASSWORD=" docker-compose.yml | cut -d'=' -f2 | tr -d ' ')
 fi
 
-# 6. Создание директории для хранения профиля браузера
+# 7. Создание директории для хранения профиля браузера
 mkdir -p browser-profile
 chmod -R 777 browser-profile
 
-# 7. Запуск контейнера через современный Docker Compose v2
+# 8. Запуск контейнера через новый Docker Compose v2
 echo "🏎 Запускаем Docker-контейнер Chromium..."
-if docker compose version &>/dev/null; then
-    docker compose up -d
-elif command -v docker-compose &>/dev/null; then
-    docker-compose up -d
-else
-    echo "❌ Ошибка: Docker Compose не найден."
-    exit 1
-fi
+/usr/local/bin/docker-compose up -d
 
-# 8. Автоматическая настройка Nginx
+# 9. Автоматическая настройка Nginx
 echo "🌐 Настраиваем веб-сервер Nginx..."
 mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 cp -f nginx.conf /etc/nginx/sites-available/gemini
