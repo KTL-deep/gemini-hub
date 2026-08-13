@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 
 # ====================================================================
-# Автоматический скрипт установки Облачного Браузера Gemini (KasmVNC)
-# Запускать на VPS сервере в Польше (Ubuntu / Debian)
+# Автоматический скрипт установки и настройки Gemini Cloud Browser + Nginx
 # ====================================================================
 
 set -e
 
-echo "🚀 Начинаем установку Gemini Cloud Browser..."
+echo "🚀 Начинаем полную авто-установку Gemini Cloud Browser..."
 
 # 1. Проверка прав root
 if [ "$EUID" -ne 0 ]; then
@@ -16,7 +15,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # 2. Обновление пакетов и установка зависимостей
-echo "📦 Обновляем системные пакеты..."
+echo "📦 Проверяем пакеты и зависимости..."
 apt-get update -y
 apt-get install -y curl wget git nginx certbot python3-certbot-nginx
 
@@ -25,7 +24,7 @@ if ! command -v docker &> /dev/null; then
     echo "🐳 Устанавливаем Docker..."
     curl -fsSL https://get.docker.com -o get-docker.sh
     sh get-docker.sh
-    rm get-docker.sh
+    rm -f get-docker.sh
 else
     echo "✅ Docker уже установлен."
 fi
@@ -36,33 +35,45 @@ if ! command -v docker-compose &> /dev/null; then
     apt-get install -y docker-compose-plugin docker-compose
 fi
 
-# 5. Генерация надежного пароля, если пользователь не менял его
-GEN_PASSWORD=$(openssl rand -base64 12 | tr -dc 'a-zA-Z0-9')
-sed -i "s/ChangeMeSecurePassword123!/$GEN_PASSWORD/g" docker-compose.yml
+# 5. Генерация надежного пароля, если пароль еще не меняли
+if grep -q "ChangeMeSecurePassword123!" docker-compose.yml; then
+    GEN_PASSWORD=$(openssl rand -base64 12 | tr -dc 'a-zA-Z0-9')
+    sed -i "s/ChangeMeSecurePassword123!/$GEN_PASSWORD/g" docker-compose.yml
+else
+    GEN_PASSWORD=$(grep "PASSWORD=" docker-compose.yml | cut -d'=' -f2 | tr -d ' ')
+fi
 
 # 6. Создание директории для хранения профиля браузера
 mkdir -p browser-profile
 chmod -R 777 browser-profile
 
-# 7. Запуск контейнера
+# 7. Запуск контейнера Docker
 echo "🏎 Запускаем Docker-контейнер Chromium..."
 docker compose up -d || docker-compose up -d
 
+# 8. Автоматическая настройка Nginx
+echo "🌐 Настраиваем веб-сервер Nginx..."
+mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
+cp -f nginx.conf /etc/nginx/sites-available/gemini
+rm -f /etc/nginx/sites-enabled/default
+ln -sf /etc/nginx/sites-available/gemini /etc/nginx/sites-enabled/gemini
+
+# Проверка конфига Nginx и запуск
+nginx -t
+systemctl restart nginx
+systemctl enable nginx
+
+# Определение внешнего IP-адреса сервера
+SERVER_IP=$(curl -s ifconfig.me || curl -s api.ipify.org || echo "78.17.155.213")
+
 echo ""
 echo "======================================================================"
-echo "🎉 ОБЛАЧНЫЙ БРАУЗЕР УСПЕШНО ЗАПУЩЕН!"
+echo "🎉 ВСЁ ГОТОВО! ОБЛАЧНЫЙ БРАУЗЕР УСПЕШНО НАСТРОЕН И ЗАПУЩЕН!"
 echo "======================================================================"
-echo "Логин пользователя: admin"
-echo "Ваш сгенерированный пароль: $GEN_PASSWORD"
+echo "🌐 Ссылка для входа в браузер:"
+echo "   http://$SERVER_IP"
 echo ""
-echo "Локальный адрес браузера: http://127.0.0.1:3000"
-echo ""
-echo "📌 СЛЕДУЮЩИЕ ШАГИ:"
-echo "1. Скопируйте файл nginx.conf в /etc/nginx/sites-available/gemini"
-echo "2. Укажите там ваш домен вместо YOUR_DOMAIN.COM"
-echo "3. Активируйте симлинк и перезапустите Nginx:"
-echo "   ln -s /etc/nginx/sites-available/gemini /etc/nginx/sites-enabled/"
-echo "   systemctl reload nginx"
-echo "4. Выпустите бесплатный SSL-сертификат:"
-echo "   certbot --nginx -d ваш_домен.com"
+echo "🔑 Данные авторизации (KasmVNC):"
+echo "   Логин:  admin"
+echo "   Пароль: $GEN_PASSWORD"
 echo "======================================================================"
