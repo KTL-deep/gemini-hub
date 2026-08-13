@@ -2,12 +2,12 @@
 
 # ====================================================================
 # Автоматический скрипт установки и настройки Gemini Cloud Browser + Nginx
-# Домен: site.ktl-server.ru
+# Домен: site.ktl-server.ru (Порт: 8443)
 # ====================================================================
 
 set -e
 
-echo "🚀 Начинаем полную авто-установку Gemini Cloud Browser для site.ktl-server.ru..."
+echo "🚀 Начинаем полную авто-установку Gemini Cloud Browser на порту 8443..."
 
 # 1. Проверка прав root
 if [ "$EUID" -ne 0 ]; then
@@ -58,8 +58,8 @@ chmod -R 777 browser-profile
 echo "🏎 Запускаем Docker-контейнер Chromium..."
 /usr/local/bin/docker-compose up -d
 
-# 9. Автоматическая настройка Nginx для site.ktl-server.ru
-echo "🌐 Настраиваем веб-сервер Nginx для домена site.ktl-server.ru..."
+# 9. Автоматическая настройка Nginx на порту 8443
+echo "🌐 Настраиваем веб-сервер Nginx на порту 8443 для site.ktl-server.ru..."
 mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 cp -f nginx.conf /etc/nginx/sites-available/gemini
 rm -f /etc/nginx/sites-enabled/default
@@ -70,18 +70,13 @@ nginx -t
 systemctl restart nginx
 systemctl enable nginx
 
-# 10. Автоматический выпуск SSL сертификата через Certbot
-echo "🔒 Проверяем и выпускаем бесплатный SSL-сертификат (HTTPS)..."
-certbot --nginx -d site.ktl-server.ru --non-interactive --agree-tos --register-unsafely-without-email || echo "⚠️ Certbot не смог выпустить SSL (убедитесь, что A-запись site.ktl-server.ru указывает на IP 78.17.155.213)."
-
-systemctl reload nginx
-
 echo ""
 echo "======================================================================"
 echo "🎉 ВСЁ ГОТОВО! ОБЛАЧНЫЙ БРАУЗЕР УСПЕШНО НАСТРОЕН И ЗАПУЩЕН!"
 echo "======================================================================"
-echo "🌐 Ссылка для входа в браузер:"
-echo "   https://site.ktl-server.ru  (или http://78.17.155.213)"
+echo "🌐 Ссылка для входа в браузер (Порт 8443):"
+echo "   https://site.ktl-server.ru:8443"
+echo "   http://site.ktl-server.ru:8080"
 echo ""
 echo "🔑 Данные авторизации (KasmVNC):"
 echo "   Логин:  admin"
