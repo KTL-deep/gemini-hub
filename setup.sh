@@ -2,12 +2,12 @@
 
 # ====================================================================
 # Автоматический скрипт установки и настройки Gemini Cloud Browser + Nginx
-# Домен: gem.ktl-server.ru
+# Домен: site.ktl-server.ru
 # ====================================================================
 
 set -e
 
-echo "🚀 Начинаем полную авто-установку Gemini Cloud Browser для gem.ktl-server.ru..."
+echo "🚀 Начинаем полную авто-установку Gemini Cloud Browser для site.ktl-server.ru..."
 
 # 1. Проверка прав root
 if [ "$EUID" -ne 0 ]; then
@@ -58,8 +58,8 @@ chmod -R 777 browser-profile
 echo "🏎 Запускаем Docker-контейнер Chromium..."
 /usr/local/bin/docker-compose up -d
 
-# 9. Автоматическая настройка Nginx для gem.ktl-server.ru
-echo "🌐 Настраиваем веб-сервер Nginx для домена gem.ktl-server.ru..."
+# 9. Автоматическая настройка Nginx для site.ktl-server.ru
+echo "🌐 Настраиваем веб-сервер Nginx для домена site.ktl-server.ru..."
 mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 cp -f nginx.conf /etc/nginx/sites-available/gemini
 rm -f /etc/nginx/sites-enabled/default
@@ -70,9 +70,9 @@ nginx -t
 systemctl restart nginx
 systemctl enable nginx
 
-# 10. Автоматический выпуск SSL сертификата через Certbot (если A-запись домена указывает на сервер)
+# 10. Автоматический выпуск SSL сертификата через Certbot
 echo "🔒 Проверяем и выпускаем бесплатный SSL-сертификат (HTTPS)..."
-certbot --nginx -d gem.ktl-server.ru --non-interactive --agree-tos --register-unsafely-without-email || echo "⚠️ Certbot не смог выпустить SSL (убедитесь, что A-запись gem.ktl-server.ru указывает на IP сервера 78.17.155.213)."
+certbot --nginx -d site.ktl-server.ru --non-interactive --agree-tos --register-unsafely-without-email || echo "⚠️ Certbot не смог выпустить SSL (убедитесь, что A-запись site.ktl-server.ru указывает на IP 78.17.155.213)."
 
 systemctl reload nginx
 
@@ -81,7 +81,7 @@ echo "======================================================================"
 echo "🎉 ВСЁ ГОТОВО! ОБЛАЧНЫЙ БРАУЗЕР УСПЕШНО НАСТРОЕН И ЗАПУЩЕН!"
 echo "======================================================================"
 echo "🌐 Ссылка для входа в браузер:"
-echo "   https://gem.ktl-server.ru  (или http://78.17.155.213)"
+echo "   https://site.ktl-server.ru  (или http://78.17.155.213)"
 echo ""
 echo "🔑 Данные авторизации (KasmVNC):"
 echo "   Логин:  admin"
