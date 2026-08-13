@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  gemini-browser:
+    image: lscr.io/linuxserver/chromium:latest
+    container_name: gemini-browser
+    security_opt:
+      - seccomp:unconfined # Требуется для корректной работы песочницы Chromium в Docker
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Warsaw
+      - CUSTOM_USER=admin
+      - PASSWORD=ChangeMeSecurePassword123! # Пароль для входа в веб-браузер
+      - CHROME_CLI=https://gemini.google.com/ # Авто-открытие Gemini при старте
+    volumes:
+      - ./browser-profile:/config # Сохранение сессии Google, авторизации и настроек
+    ports:
+      - "127.0.0.1:3000:3000" # KasmVNC HTTP порт (для проксирования через Nginx)
+      - "127.0.0.1:3001:3001" # KasmVNC HTTPS порт
+    shm_size: "2gb" # Разделяемая память для плавной работы тяжелых вкладок
+    restart: unless-stopped
