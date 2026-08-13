@@ -2,12 +2,12 @@
 
 # ====================================================================
 # Автоматический скрипт установки и настройки Gemini Cloud Browser + Nginx
-# Домен: site.ktl-server.ru (Порт: 8443)
+# Домен: site.ktl-server.ru (Стандартный HTTPS порт 443)
 # ====================================================================
 
 set -e
 
-echo "🚀 Начинаем полную авто-установку Gemini Cloud Browser на порту 8443..."
+echo "🚀 Начинаем полную авто-установку Gemini Cloud Browser на стандартном порту 443..."
 
 # 1. Проверка прав root
 if [ "$EUID" -ne 0 ]; then
@@ -58,8 +58,8 @@ chmod -R 777 browser-profile
 echo "🏎 Запускаем Docker-контейнер Chromium..."
 /usr/local/bin/docker-compose up -d
 
-# 9. Автоматическая настройка Nginx на порту 8443
-echo "🌐 Настраиваем веб-сервер Nginx на порту 8443 для site.ktl-server.ru..."
+# 9. Автоматическая настройка Nginx на порту 443
+echo "🌐 Настраиваем веб-сервер Nginx на порту 443 для site.ktl-server.ru..."
 mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 cp -f nginx.conf /etc/nginx/sites-available/gemini
 rm -f /etc/nginx/sites-enabled/default
@@ -74,9 +74,8 @@ echo ""
 echo "======================================================================"
 echo "🎉 ВСЁ ГОТОВО! ОБЛАЧНЫЙ БРАУЗЕР УСПЕШНО НАСТРОЕН И ЗАПУЩЕН!"
 echo "======================================================================"
-echo "🌐 Ссылка для входа в браузер (Порт 8443):"
-echo "   https://site.ktl-server.ru:8443"
-echo "   http://site.ktl-server.ru:8080"
+echo "🌐 Ссылка для входа в браузер:"
+echo "   https://site.ktl-server.ru"
 echo ""
 echo "🔑 Данные авторизации (KasmVNC):"
 echo "   Логин:  admin"
