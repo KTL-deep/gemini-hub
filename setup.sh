@@ -17,7 +17,7 @@ fi
 # 2. Обновление пакетов и установка зависимостей
 echo "📦 Проверяем пакеты и зависимости..."
 apt-get update -y
-apt-get install -y curl wget git nginx certbot python3-certbot-nginx
+apt-get install -y curl wget git nginx certbot python3-certbot-nginx docker-compose-v2 docker-compose-plugin 2>/dev/null || true
 
 # 3. Проверка и установка Docker
 if ! command -v docker &> /dev/null; then
@@ -29,11 +29,9 @@ else
     echo "✅ Docker уже установлен."
 fi
 
-# 4. Проверка и установка Docker Compose
-if ! command -v docker-compose &> /dev/null; then
-    echo "🛠 Устанавливаем Docker Compose..."
-    apt-get install -y docker-compose-plugin docker-compose
-fi
+# 4. Очистка старых зависших контейнеров (для предотвращения KeyError ContainerConfig)
+echo "🧹 Очищаем старые версии контейнеров..."
+docker rm -f gemini-browser 2>/dev/null || true
 
 # 5. Генерация надежного пароля, если пароль еще не меняли
 if grep -q "ChangeMeSecurePassword123!" docker-compose.yml; then
@@ -47,9 +45,16 @@ fi
 mkdir -p browser-profile
 chmod -R 777 browser-profile
 
-# 7. Запуск контейнера Docker
+# 7. Запуск контейнера через современный Docker Compose v2
 echo "🏎 Запускаем Docker-контейнер Chromium..."
-docker compose up -d || docker-compose up -d
+if docker compose version &>/dev/null; then
+    docker compose up -d
+elif command -v docker-compose &>/dev/null; then
+    docker-compose up -d
+else
+    echo "❌ Ошибка: Docker Compose не найден."
+    exit 1
+fi
 
 # 8. Автоматическая настройка Nginx
 echo "🌐 Настраиваем веб-сервер Nginx..."
